@@ -10,7 +10,12 @@ export default function ConvertPage() {
     handleSwap, handleConvert,
   } = useConvert();
 
-  const types = ['length', 'weight', 'volume', 'temperature'];
+  const types = [
+    { id: 'length',      label: 'Length',      icon: '📏' },
+    { id: 'weight',      label: 'Weight',      icon: '⚖️' },
+    { id: 'volume',      label: 'Volume',      icon: '🧪' },
+    { id: 'temperature', label: 'Temp',        icon: '🌡️' },
+  ];
 
   return (
     <div>
@@ -25,11 +30,12 @@ export default function ConvertPage() {
         <div className="sub-tabs">
           {types.map(t => (
             <button
-              key={t}
-              className={`sub-tab${convType === t ? ' active' : ''}`}
-              onClick={() => setConvType(t)}
+              key={t.id}
+              className={`sub-tab${convType === t.id ? ' active' : ''}`}
+              onClick={() => setConvType(t.id)}
             >
-              {t.charAt(0).toUpperCase() + t.slice(1)}
+              <span>{t.icon}</span>
+              {t.label}
             </button>
           ))}
         </div>

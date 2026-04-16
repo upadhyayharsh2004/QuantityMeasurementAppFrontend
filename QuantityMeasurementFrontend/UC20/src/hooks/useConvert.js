@@ -3,6 +3,7 @@ import { UNITS, localConvert, extractResultValue, extractError, extractErrorMess
 import { convertUnits } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { triggerHistoryRefresh } from './useHistory';
 
 export function useConvert() {
   const { isLoggedIn } = useAuth();
@@ -57,6 +58,8 @@ export function useConvert() {
           val: `${formatNum(resVal)} ${toUnit}`,
           meta: `${num} ${fromUnit} → ${formatNum(resVal)} ${toUnit}`,
         });
+        // ── Refresh history so last op is immediately visible ──
+        if (isLoggedIn) triggerHistoryRefresh();
       }
     } catch (e) {
       setResult({ isError: true, val: e.response?.data?.title || e.message || 'Error', meta: '' });

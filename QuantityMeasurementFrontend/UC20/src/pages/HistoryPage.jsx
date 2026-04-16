@@ -18,42 +18,16 @@ function pickField(item, ...keys) {
 }
 
 function formatTimestamp(raw) {
-  if (!raw) return { date: '—', time: '—', full: '—', relative: '' };
+  if (!raw) return { date: '—', time: '—', full: '—' };
   try {
     const d = new Date(raw);
-    if (isNaN(d)) return { date: '—', time: '—', full: raw, relative: '' };
+    if (isNaN(d)) return { date: '—', time: '—', full: raw };
     const date = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     const time = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-    const now = Date.now();
-    const diff = Math.floor((now - d.getTime()) / 1000);
-    let relative = '';
-    if (diff < 60) relative = 'Just now';
-    else if (diff < 3600) relative = `${Math.floor(diff/60)}m ago`;
-    else if (diff < 86400) relative = `${Math.floor(diff/3600)}h ago`;
-    else if (diff < 604800) relative = `${Math.floor(diff/86400)}d ago`;
-    else relative = date;
-    return { date, time, full: `${date} · ${time}`, relative };
+    return { date, time, full: `${date} · ${time}` };
   } catch {
-    return { date: '—', time: '—', full: raw, relative: '' };
+    return { date: '—', time: '—', full: raw };
   }
-}
-
-function buildSummary(op, firstVal, firstUnit, secondVal, secondUnit, resultVal, resultUnit, measType) {
-  const fv = firstVal !== '' ? firstVal : null;
-  const rv = resultVal !== null && resultVal !== undefined ? resultVal : null;
-  if (!fv) return null;
-  const fmt = (n) => isNaN(Number(n)) ? n : Number(n).toLocaleString('en-IN', { maximumFractionDigits: 4 });
-  if (op === 'conversion') {
-    const tu = secondUnit || resultUnit || firstUnit;
-    return rv != null
-      ? `Converted ${fmt(fv)} ${firstUnit} → ${fmt(rv)} ${tu}`
-      : `Converted ${fmt(fv)} ${firstUnit} to ${tu}`;
-  }
-  if (op === 'addition')    return rv != null ? `${fmt(fv)} ${firstUnit} + ${fmt(secondVal)} ${secondUnit} = ${fmt(rv)} ${resultUnit}` : null;
-  if (op === 'subtraction') return rv != null ? `${fmt(fv)} ${firstUnit} − ${fmt(secondVal)} ${secondUnit} = ${fmt(rv)} ${resultUnit}` : null;
-  if (op === 'division')    return rv != null ? `${fmt(fv)} ${firstUnit} ÷ ${fmt(secondVal)} ${secondUnit} = ${fmt(rv)}` : null;
-  if (op === 'comparison')  return `Compared ${fmt(fv)} ${firstUnit} vs ${fmt(secondVal)} ${secondUnit}`;
-  return null;
 }
 
 const OP_CONFIG = {
@@ -92,9 +66,8 @@ function HistoryCard({ item, idx }) {
   const resultStr  = extractResultString(item);
   const entityId   = pickField(item, 'entity_id', 'EntityId', 'Id', 'id');
 
-  const ts      = formatTimestamp(createdAt);
-  const tsUp    = formatTimestamp(updatedAt);
-  const summary = buildSummary(op, firstVal, firstUnit, secondVal, secondUnit, resultVal, resultUnit, measType);
+  const ts   = formatTimestamp(createdAt);
+  const tsUp = formatTimestamp(updatedAt);
 
   const showSecond = op !== 'conversion' && (secondVal !== '' || secondUnit !== '');
   // For conversion: secondUnit = the target unit
@@ -112,11 +85,16 @@ function HistoryCard({ item, idx }) {
         </span>
 
         {/* Measurement type tag */}
-        {measType && (
-          <span className="hc-type-tag">
-            📐 {capitalize(measType)}
-          </span>
-        )}
+        {measType && (() => {
+          const typeIcons = { length: '📏', weight: '⚖️', volume: '🧪', temperature: '🌡️' };
+          const icon = typeIcons[measType?.toLowerCase()] || '';
+          return (
+            <span className="hc-type-tag">
+              {icon && <span style={{ marginRight: '4px' }}>{icon}</span>}
+              {capitalize(measType)}
+            </span>
+          );
+        })()}
 
         {/* Error badge */}
         {isErr && (
@@ -143,9 +121,8 @@ function HistoryCard({ item, idx }) {
 
         {/* Timestamp */}
         <div className="hc-timestamp">
-          {ts.relative && <span style={{ fontSize: '10px', fontWeight: 700, color: '#7c3aed', fontFamily: 'var(--mono)' }}>{ts.relative}</span>}
-          <span className="hc-ts-date">📅 {ts.date}</span>
-          <span className="hc-ts-time">⏱ {ts.time}</span>
+          <span className="hc-ts-date">{ts.date}</span>
+          <span className="hc-ts-time">{ts.time}</span>
         </div>
       </div>
 
@@ -185,14 +162,13 @@ function HistoryCard({ item, idx }) {
               </>
             )}
 
-            {/* Conversion target unit indicator */}
-            {op === 'conversion' && firstVal !== '' && (
+            {/* Conversion target unit indicator - only show if result exists */}
+            {op === 'conversion' && convTargetUnit && firstVal !== '' && resultVal !== null && resultVal !== undefined && (
               <>
                 <div className="hc-qty" style={{ background: 'linear-gradient(135deg,rgba(16,185,129,0.06),rgba(14,165,233,0.04))', borderColor: 'rgba(16,185,129,0.2)' }}>
-                  <span className="qty-unit" style={{ color: '#047857', fontSize: '14px', fontWeight: 700, marginTop: '4px' }}>
-                    {convTargetUnit || resultUnit || firstUnit || 'Same Unit'}
-                  </span>
-                  <span className="qty-label">Convert To</span>
+                  <span className="qty-value" style={{ background: 'var(--grad3)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{resultVal}</span>
+                  <span className="qty-unit" style={{ color: '#047857' }}>{convTargetUnit}</span>
+                  <span className="qty-label">To</span>
                 </div>
                 <span className="hc-arrow">=</span>
               </>
@@ -219,23 +195,6 @@ function HistoryCard({ item, idx }) {
           <div className="hc-error-banner">
             <span className="err-icon">⚠️</span>
             <span>{errMsg || 'An error occurred during this operation.'}</span>
-          </div>
-        )}
-
-        {/* ── Summary sentence ── */}
-        {summary && !isErr && (
-          <div style={{
-            fontSize: '12px',
-            color: '#3b2f8a',
-            fontWeight: 500,
-            padding: '8px 12px',
-            background: 'linear-gradient(135deg, rgba(124,58,237,0.04), rgba(14,165,233,0.03))',
-            borderRadius: '8px',
-            border: '1px solid rgba(124,58,237,0.1)',
-            fontFamily: 'var(--mono)',
-            letterSpacing: '-0.01em',
-          }}>
-            📋 {summary}
           </div>
         )}
 
@@ -305,11 +264,11 @@ function HistoryCard({ item, idx }) {
             </span>
           )}
 
-          {/* Created timestamp chip */}
-          {createdAt && (
-            <span className="hc-meta-chip" style={{ background: 'rgba(124,58,237,0.04)', borderColor: 'rgba(124,58,237,0.15)' }}>
-              <span className="chip-label">Created</span>
-              <span className="chip-val">{ts.date} {ts.time}</span>
+          {/* Updated at */}
+          {updatedAt && updatedAt !== createdAt && (
+            <span className="hc-meta-chip">
+              <span className="chip-label">Updated</span>
+              <span className="chip-val">{tsUp.time}</span>
             </span>
           )}
         </div>
@@ -355,7 +314,7 @@ export default function HistoryPage({ onOpenModal }) {
     <div>
       <div className="section-head">
         <h2>Operation History</h2>
-        <p>Full log of every calculation — timestamps, inputs, units, results and summaries from your account. Each card shows when it was created, what was calculated, and the full result.</p>
+        <p>Full log of every calculation — with timestamps, inputs, units and results from your account.</p>
       </div>
 
       {/* ── Auth gate ── */}
@@ -372,46 +331,32 @@ export default function HistoryPage({ onOpenModal }) {
       ) : (
         <div>
           {/* ── Stats bar ── */}
-          {!loading && total > 0 && (() => {
-            const lastItem = history[0];
-            const lastTs = lastItem ? (lastItem.entity_created_at || lastItem.EntityCreatedAt || lastItem.createdAt || '') : '';
-            const lastTsFmt = formatTimestamp(lastTs);
-            const mostUsedOp = ['conversion','addition','subtraction','division','comparison'].reduce((best, op) => {
-              const cnt = history.filter(i => extractOp(i) === op).length;
-              return cnt > (best.cnt || 0) ? { op, cnt } : best;
-            }, {}).op || '—';
-            const successRate = total > 0 ? Math.round((success / total) * 100) : 0;
-            return (
-              <div className="history-stats-bar" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
-                <div className="hsb-item">
-                  <div className="hsb-val">{total}</div>
-                  <div className="hsb-label">Total Ops</div>
-                </div>
-                <div className="hsb-item">
-                  <div className="hsb-val">{success}</div>
-                  <div className="hsb-label">Successful</div>
-                </div>
-                <div className="hsb-item">
-                  <div className="hsb-val">{conversions}</div>
-                  <div className="hsb-label">Conversions</div>
-                </div>
-                <div className="hsb-item">
-                  <div className="hsb-val">{arithmetic}</div>
-                  <div className="hsb-label">Arithmetic</div>
-                </div>
-                <div className="hsb-item">
-                  <div className="hsb-val" style={{ background: errors > 0 ? 'var(--grad2)' : 'var(--grad1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                    {errors}
-                  </div>
-                  <div className="hsb-label">Errors</div>
-                </div>
-                <div className="hsb-item" title={lastTsFmt.full}>
-                  <div className="hsb-val" style={{ fontSize: '12px', fontFamily: 'var(--mono)', letterSpacing: '-0.03em' }}>{lastTsFmt.relative || '—'}</div>
-                  <div className="hsb-label">Last Op</div>
-                </div>
+          {!loading && total > 0 && (
+            <div className="history-stats-bar">
+              <div className="hsb-item">
+                <div className="hsb-val">{total}</div>
+                <div className="hsb-label">Total Ops</div>
               </div>
-            );
-          })()}
+              <div className="hsb-item">
+                <div className="hsb-val">{success}</div>
+                <div className="hsb-label">Successful</div>
+              </div>
+              <div className="hsb-item">
+                <div className="hsb-val">{conversions}</div>
+                <div className="hsb-label">Conversions</div>
+              </div>
+              <div className="hsb-item">
+                <div className="hsb-val">{arithmetic}</div>
+                <div className="hsb-label">Arithmetic</div>
+              </div>
+              <div className="hsb-item">
+                <div className="hsb-val" style={{ background: errors > 0 ? 'var(--grad2)' : 'var(--grad1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                  {errors}
+                </div>
+                <div className="hsb-label">Errors</div>
+              </div>
+            </div>
+          )}
 
           {/* ── Filter chips ── */}
           <div className="history-filters" style={{ marginBottom: '1.25rem' }}>
@@ -459,14 +404,14 @@ export default function HistoryPage({ onOpenModal }) {
               disabled={loading}
               style={{ marginLeft: 'auto', color: 'var(--accent)', borderColor: 'var(--border2)' }}
             >
-              {loading ? '⏳ Loading…' : '↻ Refresh'}
+              {loading ? 'Loading…' : '↻ Refresh'}
             </button>
           </div>
 
           {/* ── Content ── */}
           {loading ? (
             <div className="history-empty">
-              <div className="big">⏳</div>
+              <div className="big" style={{ fontSize: '32px' }}>⋯</div>
               <div style={{ color: 'var(--text2)', fontWeight: 500 }}>Loading your history…</div>
               <div style={{ fontSize: '12px', marginTop: '6px' }}>Fetching from your account</div>
             </div>

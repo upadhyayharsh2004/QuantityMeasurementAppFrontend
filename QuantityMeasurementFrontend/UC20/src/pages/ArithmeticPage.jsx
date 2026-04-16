@@ -16,8 +16,18 @@ export default function ArithmeticPage() {
     handleCalculate,
   } = useArithmetic();
 
-  const ops   = ['addition', 'subtraction', 'division', 'comparison'];
-  const types = ['length', 'weight', 'volume', 'temperature'];
+  const ops   = [
+    { id: 'addition',    label: 'Add',      icon: '➕' },
+    { id: 'subtraction', label: 'Subtract', icon: '➖' },
+    { id: 'division',    label: 'Divide',   icon: '➗' },
+    { id: 'comparison',  label: 'Compare',  icon: '⚖️' },
+  ];
+  const types = [
+    { id: 'length',      label: 'Length',      icon: '📏' },
+    { id: 'weight',      label: 'Weight',      icon: '⚖️' },
+    { id: 'volume',      label: 'Volume',      icon: '🧪' },
+    { id: 'temperature', label: 'Temp',        icon: '🌡️' },
+  ];
   const showTarget = arithOp !== 'division' && arithOp !== 'comparison';
 
   return (
@@ -33,11 +43,12 @@ export default function ArithmeticPage() {
         <div className="sub-tabs">
           {ops.map(op => (
             <button
-              key={op}
-              className={`sub-tab${arithOp === op ? ' active' : ''}`}
-              onClick={() => setArithOp(op)}
+              key={op.id}
+              className={`sub-tab${arithOp === op.id ? ' active' : ''}`}
+              onClick={() => setArithOp(op.id)}
             >
-              {op.charAt(0).toUpperCase() + op.slice(1)}
+              <span>{op.icon}</span>
+              {op.label}
             </button>
           ))}
         </div>
@@ -67,8 +78,8 @@ export default function ArithmeticPage() {
           <div style={{ marginTop: '8px' }}>
             <select value={measType} onChange={e => setMeasType(e.target.value)}>
               {types.map(t => (
-                <option key={t} value={t}>
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                <option key={t.id} value={t.id}>
+                  {t.icon} {t.label}
                 </option>
               ))}
             </select>

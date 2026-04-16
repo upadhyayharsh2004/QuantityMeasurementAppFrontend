@@ -7,6 +7,7 @@ import {
 import { doArithmetic } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { triggerHistoryRefresh } from './useHistory';
 
 export function useArithmetic() {
   const { isLoggedIn } = useAuth();
@@ -66,6 +67,8 @@ export function useArithmetic() {
         }
         setResult({ isError: false, val: `${formatNum(num)} ${unit}`, meta });
       }
+      // ── Refresh history so last op is immediately visible ──
+      if (isLoggedIn) triggerHistoryRefresh();
     } catch (e) {
       setResult({ isError: true, val: e.response?.data?.title || e.message || 'Error', meta: '' });
     } finally {

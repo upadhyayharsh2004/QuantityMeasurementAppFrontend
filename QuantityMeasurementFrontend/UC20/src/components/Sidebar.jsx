@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ onOpenModal }) {
   const { isLoggedIn, displayName, initials, logout } = useAuth();
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const tabs = [
     { id: 'home',       label: 'Home',       icon: '🏠', path: '/' },
@@ -29,7 +29,6 @@ export default function Sidebar({ onOpenModal }) {
             <div className="sidebar-brand-title">Quantity<br />Measurement</div>
           </div>
         </div>
-        <div className="sidebar-brand-sub">Unit · Arithmetic · History</div>
       </div>
 
       {/* Nav */}
@@ -50,23 +49,37 @@ export default function Sidebar({ onOpenModal }) {
       {/* Auth footer */}
       <div className="sidebar-footer">
         {isLoggedIn ? (
-          <>
-            <div className="nav-user">
-              <div className="nav-avatar">{initials}</div>
-              <span style={{ fontSize: '12px' }}>{displayName}</span>
+          <div className="sidebar-user-block">
+            {/* User info card */}
+            <div className="sidebar-user-card">
+              <div className="sidebar-user-avatar">{initials || '?'}</div>
+              <div className="sidebar-user-info">
+                <div className="sidebar-user-name">{displayName}</div>
+                <div className="sidebar-user-status">
+                  <span className="status-dot" />
+                  Signed in
+                </div>
+              </div>
             </div>
-            <button className="btn-ghost" onClick={logout}>Sign out</button>
-          </>
+            {/* Sign out button */}
+            <button className="sidebar-signout-btn" onClick={logout}>
+              <span className="signout-icon">⏻</span>
+              Sign Out
+            </button>
+          </div>
         ) : (
           <div className="sidebar-auth-btns">
             <button
               className="btn btn-primary btn-full"
-              style={{ fontSize: '13px', padding: '9px 14px' }}
+              style={{ fontSize: '13px', padding: '10px 14px' }}
               onClick={() => onOpenModal('register')}
             >
               Register
             </button>
-            <button className="btn-ghost" onClick={() => onOpenModal('login')}>
+            <button
+              className="sidebar-signin-btn"
+              onClick={() => onOpenModal('login')}
+            >
               Sign In
             </button>
           </div>
